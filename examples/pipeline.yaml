@@ -9,7 +9,7 @@ steps:
 
   - name: to_crm
     kind: sink
-    using: crm
+    using: dry
     contract:
       - {name: email, type: string, required: true}
       - {name: lead_source, type: string, enum: [paid, organic, event, referral]}

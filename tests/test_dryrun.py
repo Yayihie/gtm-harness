@@ -22,7 +22,7 @@ def test_validate_contract_type_mismatch():
 
 def test_plan_blocks_bad_rows():
     contract = [FieldContract("email"), FieldContract("lead_source", enum=["paid", "organic"])]
-    sink = type("S", (), {"name": "to_crm", "using": "crm", "contract": contract})()
+    sink = type("S", (), {"name": "to_crm", "using": "dry", "contract": contract})()
     pipeline = type("P", (), {"name": "p", "sinks": lambda self: [sink]})()
     rows = [
         {"email": "a@b.com", "lead_source": "paid"},
@@ -37,7 +37,7 @@ def test_plan_blocks_bad_rows():
 def test_format_plan_shows_write_and_block():
     out = {
         "pipeline": "p", "rows_in": 2, "writes": [
-            {"sink": "crm", "using": "crm", "row": 0, "key": "a@b.com",
+            {"sink": "crm", "using": "dry", "row": 0, "key": "a@b.com",
              "fields": {"email": "a@b.com"}, "errors": []},
         ], "errors": [],
     }

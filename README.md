@@ -58,6 +58,32 @@ PLAN  pipeline=inbound_lead_routing  rows_in=3  writes=3  errors=0
 - **Fail loudly, write nothing.** A blocked run writes zero rows. No partial state.
 - **The contract is the documentation.** No Loom video required.
 
+## Enrichment waterfall — BYO keys, cost-ordered, budget-capped
+
+```yaml
+  - name: enrich
+    kind: transform
+    using: enrich
+    config:
+      providers: [prospeo, leadmagic]   # cheapest first; falls through on miss
+      provider_config: {PROSPEO_API_KEY: "…", LEADMAGIC_API_KEY: "…"}
+```
+
+- Cost-ordered: try the cheapest provider first, fall through only on a miss
+- Per-lead cache: the same lead is never purchased twice (cached per state dir)
+- Budget cap: `gtmharness run pipe.yaml --budget 5.00` aborts the run the moment
+  cumulative spend crosses the cap, with a ledger summary
+- Every provider call is logged to the ledger with its real price
+
+## Webhook sinks
+
+```yaml
+  - name: fan_out
+    kind: sink
+    using: webhook
+    config: {url: "https://hooks.example.com/leads"}
+```
+
 ## Skills — reusable pipeline templates
 
 ```bash
@@ -91,9 +117,10 @@ total transparency about what enrichment actually costs you.
 
 ## Status
 
-v0.2.0 — spec validation, schema drift, dry-run plans, audit log, CSV/JSON sources,
-skills registry, HubSpot + Salesforce sink adapters, provider cost ledger, GitHub Action.
+v0.3.0 — spec validation, schema drift, dry-run plans, audit log, CSV/JSON sources,
+skills registry, HubSpot + Salesforce + webhook sink adapters, enrichment waterfall
+(BYO keys, cost-ordered, cached, budget-capped), provider cost ledger, GitHub Action.
 
-Roadmap: enrichment waterfall adapter, webhook sinks, more source adapters.
+Roadmap: see MILESTONES.md (M4: trust & ops — diff, doctor, rollback, tamper-evident audit log).
 
 MIT licensed.

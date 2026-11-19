@@ -14,7 +14,7 @@ from pathlib import Path
 import yaml
 
 VALID_KINDS = {"source", "transform", "sink"}
-VALID_SINKS = {"crm", "webhook", "sheet", "null"}
+VALID_SINKS = {"webhook", "hubspot", "salesforce", "dry"}
 NAME_RE = re.compile(r"^[a-z0-9_]+$")
 
 

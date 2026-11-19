@@ -12,7 +12,7 @@ steps:
     config: {path: leads.json}
   - name: to_crm
     kind: sink
-    using: crm
+    using: dry
     contract:
       - {name: email, type: string}
       - {name: lead_source, type: string, enum: [paid, organic, event]}

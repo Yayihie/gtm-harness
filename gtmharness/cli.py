@@ -19,12 +19,13 @@ from .sources import load_rows
 SINK_DISPATCH = {
     "hubspot": ("gtmharness.adapters.hubspot", "write_rows"),
     "salesforce": ("gtmharness.adapters.salesforce", "write_rows"),
+    "webhook": ("gtmharness.adapters.webhook", "write_rows"),
 }
 
 
 def _write_to_sink(sink, row):
     """Dispatch a row to a real sink adapter; 'null' just records the intent."""
-    if sink.using == "null":
+    if sink.using == "dry":
         return {"key": row.get("email"), "id": None, "status": "dry"}
     if sink.using in SINK_DISPATCH:
         import importlib
@@ -40,6 +41,25 @@ def _write_to_sink(sink, row):
 def _source_rows(pipeline):
     src = pipeline.sources()[0]
     return load_rows(src.using, src.config)
+
+
+def _apply_transforms(rows, pipeline, state_dir, budget_usd=None):
+    """Execute transform steps in order. 'enrich' runs the BYO-key waterfall."""
+    from .adapters import enrich
+    for step in pipeline.steps:
+        if step.kind != "transform":
+            continue
+        if step.using == "enrich":
+            providers = step.config.get("providers") or ["null"]
+            pconfig = step.config.get("provider_config") or {}
+            budget = step.config.get("budget_usd") or budget_usd
+            rows = enrich.enrich_rows(rows, providers, pconfig,
+                                      state_dir=state_dir,
+                                      pipeline=pipeline.name,
+                                      budget_usd=budget)
+        else:
+            raise ValueError(f"transform '{step.name}': unknown adapter '{step.using}'")
+    return rows
 
 
 def cmd_check(args) -> int:
@@ -82,6 +102,17 @@ def cmd_run(args) -> int:
         print(f"SPEC ERROR: {e}")
         return 2
     rows = _source_rows(pipeline)
+    try:
+        rows = _apply_transforms(rows, pipeline, args.state_dir, budget_usd=args.budget)
+    except Exception as e:
+        print(f"TRANSFORM ERROR: {e}")
+        totals = ledger.summarize(args.state_dir)
+        if totals:
+            print("  ledger so far:")
+            for provider, t in sorted(totals.items()):
+                print(f"    {provider}: {t['calls']} calls, {t['rows']} rows, ${t['cost_usd']:.4f}")
+        print("RUN ABORTED — nothing was written.")
+        return 1
     plan_out = dryrun.plan(pipeline, rows)
     if not plan_out["ok"]:
         print(dryrun.format_plan(plan_out))
@@ -147,6 +178,8 @@ def main(argv=None) -> int:
         sp = sub.add_parser(name)
         sp.add_argument("pipeline", help="path to pipeline YAML")
         sp.set_defaults(fn=fn)
+    sub.choices["run"].add_argument("--budget", type=float, default=None,
+                                    help="max USD spend on enrichment this run")
     sp = sub.add_parser("ledger", help="summarize BYO provider spend")
     sp.set_defaults(fn=cmd_ledger)
     sp = sub.add_parser("skills", help="list pipeline skill templates")
