@@ -1,0 +1,16 @@
+# Example: inbound lead routing, declared as code.
+# The contract IS the documentation — no Loom video required.
+name: inbound_lead_routing
+steps:
+  - name: inbound_leads
+    kind: source
+    using: json
+    config: {path: examples/leads.json}
+
+  - name: to_crm
+    kind: sink
+    using: crm
+    contract:
+      - {name: email, type: string, required: true}
+      - {name: lead_source, type: string, enum: [paid, organic, event, referral]}
+      - {name: utm_campaign, type: string, required: false}

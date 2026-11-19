@@ -1,0 +1,5 @@
+[
+  {"email": "jane@acme.com", "lead_source": "paid", "utm_campaign": "spring_q3"},
+  {"email": "sam@contoso.com", "lead_source": "event", "utm_campaign": "saastr"},
+  {"email": "kim@globex.com", "lead_source": "organic"}
+]
