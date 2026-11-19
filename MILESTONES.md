@@ -33,15 +33,15 @@ every item under it is built, tested, and demonstrated on the live repo.
 - [x] Removed placeholder sinks (crm/sheet) — only real adapters validate
 - [x] 49 tests green
 
-## M4 — Trust & ops (NEXT)
+## M4 — Trust & ops (DONE, v0.4.0)
 
-- [ ] `gtmharness diff` — show exactly what a spec change would alter
-- [ ] `gtmharness doctor` — validate credentials, adapters, state dir health
-- [ ] Rollback: `run` snapshots sink state before write; `revert` restores
-- [ ] Structured JSON output mode for CI (`--json` on every command)
-- [ ] Audit log integrity: rolling hash chain (tamper-evident)
-- [ ] CI badge + coverage badge in README
-- [ ] `plan` output wraps/truncates long field values with explicit `…`
+- [x] `gtmharness diff` — show exactly what a spec change would alter
+- [x] `gtmharness doctor` — validate credentials, adapters, state dir health
+- [x] Rollback: `run` snapshots sink state before write; `revert` restores
+- [x] Structured JSON output mode for CI (`--json` on every command)
+- [x] Audit log integrity: rolling hash chain (tamper-evident)
+- [x] CI badge + coverage badge in README
+- [x] `plan` output wraps/truncates long field values with explicit `…`
 
 ## M5 — Community & distribution
 
@@ -54,13 +54,8 @@ every item under it is built, tested, and demonstrated on the live repo.
 
 ## Known issues / fixes to make
 
-1. **`plan` output truncates fields in long rows** — wrap or truncate with
-   explicit `…` so output never lies. (M4)
-2. **No CI badge / coverage badge in README** — add once Action is green. (M4)
-3. **Audit log has no integrity check** — append-only but tamper-silent; add a
-   rolling hash chain so edits are detectable. (M4)
-4. **Sink adapter errors are reported per-row but don't fail the run** — decide
+1. **Sink adapter errors are reported per-row but don't fail the run** — decide
    policy: fail-fast on first CRM error vs write-what-succeeded + report. (M4)
-5. **Skills render doesn't validate the rendered YAML** — a bad param value can
-   produce an invalid pipeline; render should round-trip through load_pipeline.
+2. **Skills render doesn't validate the rendered YAML** — a bad param value
+   produces an invalid pipeline; render should round-trip through load_pipeline.
    (M4)

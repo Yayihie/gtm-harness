@@ -1,5 +1,9 @@
 # gtmharness
 
+[![CI](https://github.com/Yayihie/gtm-harness/actions/workflows/test.yml/badge.svg)](https://github.com/Yayihie/gtm-harness/actions/workflows/test.yml)
+[![PyPI](https://img.shields.io/pypi/v/gtmharness)](https://pypi.org/project/gtmharness/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **CI/CD discipline for GTM pipelines.** GTM workflows get built in no-code tools,
 handed over as "a Loom video and a Clay table nobody else understands," and break
 silently six months later when a field gets renamed upstream. gtmharness applies

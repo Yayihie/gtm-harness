@@ -48,6 +48,17 @@ def plan(pipeline: Pipeline, rows: list[dict]) -> dict:
     return plan_out
 
 
+FIELD_MAX_LEN = 60
+
+
+def _trunc(v) -> str:
+    """Format a field value; long values are truncated with an explicit ellipsis."""
+    s = repr(v)
+    if len(s) > FIELD_MAX_LEN:
+        return s[:FIELD_MAX_LEN - 1] + "…"
+    return s
+
+
 def format_plan(plan_out: dict) -> str:
     lines = [
         f"PLAN  pipeline={plan_out['pipeline']}  rows_in={plan_out['rows_in']}  "
@@ -55,7 +66,8 @@ def format_plan(plan_out: dict) -> str:
     ]
     for w in plan_out["writes"]:
         status = "WRITE " if not w["errors"] else "BLOCK "
-        lines.append(f"  [{status}] {w['sink']} <- {w['key']} {w['fields']}")
+        fields = "{" + ", ".join(f"{k}: {_trunc(v)}" for k, v in w["fields"].items()) + "}"
+        lines.append(f"  [{status}] {w['sink']} <- {_trunc(w['key'])} {fields}")
         for e in w["errors"]:
             lines.append(f"         ! {e}")
     return "\n".join(lines)
