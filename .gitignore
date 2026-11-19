@@ -3,3 +3,7 @@ __pycache__/
 *.egg-info/
 .gtmharness/
 .pytest_cache/
+.demo-state/
+build/
+dist/
+*.egg-info/
