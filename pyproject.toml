@@ -14,5 +14,9 @@ dependencies = ["PyYAML>=6.0"]
 [project.scripts]
 gtmharness = "gtmharness.cli:main"
 
+[project.optional-dependencies]
+hubspot = ["hubspot-api-python>=11.0"]
+salesforce = ["simple-salesforce>=1.12"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

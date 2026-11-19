@@ -58,10 +58,42 @@ PLAN  pipeline=inbound_lead_routing  rows_in=3  writes=3  errors=0
 - **Fail loudly, write nothing.** A blocked run writes zero rows. No partial state.
 - **The contract is the documentation.** No Loom video required.
 
+## Skills — reusable pipeline templates
+
+```bash
+gtmharness skills                              # list built-in + user skills
+gtmharness skill inbound_lead_routing --set source_path=leads.json crm=crm
+```
+
+Skills are plain YAML with `{{param}}` slots — drop your own into
+`~/.gtmharness/skills/` and share them as files. No marketplace, no lock-in.
+
+## Real CRM sinks (optional extras)
+
+```bash
+pip install "gtmharness[hubspot]"      # official HubSpot SDK
+pip install "gtmharness[salesforce]"   # simple-salesforce
+```
+
+Point a sink at `using: hubspot` or `using: salesforce` with your credentials in
+the step config. The dry-run plan and audit log still gate every write — the
+adapter is only the final "do it" step.
+
+## Provider cost ledger
+
+```bash
+gtmharness ledger
+#  prospeo: 14 calls, 14 rows, $0.1400
+```
+
+Every BYO provider call is logged with its real cost to `ledger.jsonl` —
+total transparency about what enrichment actually costs you.
+
 ## Status
 
-v0.1.0 — core harness: spec validation, schema drift, dry-run plans, audit log, CSV/JSON sources.
+v0.2.0 — spec validation, schema drift, dry-run plans, audit log, CSV/JSON sources,
+skills registry, HubSpot + Salesforce sink adapters, provider cost ledger, GitHub Action.
 
-Roadmap: CRM adapters (Salesforce/HubSpot), webhook sinks, GitHub Action for PR-time `check` + `plan`, enrichment adapter registry.
+Roadmap: enrichment waterfall adapter, webhook sinks, more source adapters.
 
 MIT licensed.

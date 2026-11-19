@@ -1,0 +1,20 @@
+name: enrichment_waterfall
+description: Enrich leads via BYO-key providers in cost order, with a spend ledger.
+params: [source_path, provider]
+template:
+  name: enrichment_waterfall
+  steps:
+    - name: raw_leads
+      kind: source
+      using: json
+      config: {path: "{{source_path}}"}
+    - name: enrich
+      kind: transform
+      using: "{{provider}}"
+      config: {ledger: true}
+    - name: to_crm
+      kind: sink
+      using: crm
+      contract:
+        - {name: email, type: string, required: true}
+        - {name: lead_source, type: string, required: false}

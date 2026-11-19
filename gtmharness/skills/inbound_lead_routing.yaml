@@ -1,0 +1,16 @@
+name: inbound_lead_routing
+description: Route inbound leads into a CRM with a strict field contract.
+params: [source_path, crm]
+template:
+  name: inbound_lead_routing
+  steps:
+    - name: inbound_leads
+      kind: source
+      using: json
+      config: {path: "{{source_path}}"}
+    - name: to_crm
+      kind: sink
+      using: "{{crm}}"
+      contract:
+        - {name: email, type: string, required: true}
+        - {name: lead_source, type: string, enum: [paid, organic, event, referral]}
