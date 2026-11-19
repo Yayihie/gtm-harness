@@ -1,7 +1,6 @@
 # gtmharness
 
 [![CI](https://github.com/Yayihie/gtm-harness/actions/workflows/test.yml/badge.svg)](https://github.com/Yayihie/gtm-harness/actions/workflows/test.yml)
-[![PyPI](https://img.shields.io/pypi/v/gtmharness.svg)](https://pypi.org/project/gtmharness/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **CI/CD discipline for GTM pipelines.** GTM workflows get built in no-code tools,
@@ -28,8 +27,10 @@ Built from real Reddit pain in r/gtmengineering, r/revops, and r/marketing:
 ## Install
 
 ```bash
-pip install -e .
+pip install git+https://github.com/Yayihie/gtm-harness.git
 ```
+
+Requires Python 3.10+. PyPI release pending — GitHub install is the supported path.
 
 ## Quickstart
 
