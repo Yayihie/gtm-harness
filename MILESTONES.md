@@ -43,13 +43,14 @@ every item under it is built, tested, and demonstrated on the live repo.
 - [x] CI badge + coverage badge in README
 - [x] `plan` output wraps/truncates long field values with explicit `…`
 
-## M5 — Community & distribution
+## M5 — Community & distribution (IN PROGRESS)
 
-- [ ] PyPI publication (`pip install gtmharness`)
-- [ ] 3 reference example pipelines (inbound routing, enrichment, webhook fan-out)
-- [ ] Launch post framing: "they find leads; gtm-harness guarantees the pipeline
-      that moves them doesn't silently break" (vs open-source Clay clones)
-- [ ] CONTRIBUTING.md + good-first-issue labels
+- [ ] PyPI publication (`pip install gtmharness`) — BLOCKED: needs user's PyPI
+      account/token; not published without it
+- [x] 3 reference example pipelines (inbound routing, enrichment, webhook fan-out)
+- [x] Launch post drafted (LAUNCH.md) — framed around the r/nocode quote,
+      positioned against Clay/Apollo as complementary
+- [x] CONTRIBUTING.md
 - [ ] Short demo GIF/asciinema of check -> plan -> run -> audit
 
 ## Known issues / fixes to make

@@ -1,8 +1,8 @@
 # gtmharness
 
 [![CI](https://github.com/Yayihie/gtm-harness/actions/workflows/test.yml/badge.svg)](https://github.com/Yayihie/gtm-harness/actions/workflows/test.yml)
-[![PyPI](https://img.shields.io/pypi/v/gtmharness)](https://pypi.org/project/gtmharness/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/gtmharness.svg)](https://pypi.org/project/gtmharness/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **CI/CD discipline for GTM pipelines.** GTM workflows get built in no-code tools,
 handed over as "a Loom video and a Clay table nobody else understands," and break
@@ -13,7 +13,9 @@ the engineering practices that already fixed software to GTM:
 - **Contract tests** — sinks declare field contracts (required, type, picklist enum); violations block the run
 - **Schema drift detection** — snapshot source schemas; a renamed/removed/re-typed field fails loudly instead of quietly breaking routing
 - **Dry-run plans** — `plan` shows the exact write set (WRITE / BLOCK per row) before anything touches the CRM
-- **Audit log** — every write is logged with actor, timestamp, sink, and exact fields (append-only JSONL)
+- **Tamper-evident audit log** — every write is logged with a rolling SHA-256 hash chain; `audit --verify` proves the log is intact
+- **Enrichment waterfall** — BYO provider keys, cost-ordered, cached (never pay for the same lead twice), budget-capped per run
+- **Rollback** — every run snapshots its write set; `revert` restores
 
 Built from real Reddit pain in r/gtmengineering, r/revops, and r/marketing:
 

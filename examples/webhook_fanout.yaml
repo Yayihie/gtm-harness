@@ -1,0 +1,17 @@
+# Reference pipeline 3: webhook fan-out — qualified leads POSTed to an endpoint
+# (sequencer, Slack, whatever). Dry-run plan shows the exact payload first.
+name: webhook_fanout
+steps:
+  - name: qualified_leads
+    kind: source
+    using: json
+    config: {path: examples/leads.json}
+
+  - name: post
+    kind: sink
+    using: webhook
+    config:
+      url: https://example.com/hooks/leads
+    contract:
+      - {name: email, type: string, required: true}
+      - {name: lead_source, type: string, required: false}

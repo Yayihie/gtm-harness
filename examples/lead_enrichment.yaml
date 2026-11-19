@@ -1,0 +1,22 @@
+# Reference pipeline 2: enrichment waterfall — BYO provider keys, cost-ordered,
+# cached, budget-capped. Every provider call lands in the cost ledger.
+name: lead_enrichment
+steps:
+  - name: raw_leads
+    kind: source
+    using: json
+    config: {path: examples/leads.json}
+
+  - name: enrich
+    kind: transform
+    using: enrich
+    config:
+      providers: [prospeo, leadmagic]   # cheapest first; falls through on miss
+      provider_config: {}               # keys come from env or your config
+      budget_usd: 1.00                  # hard cap for the whole run
+
+  - name: to_crm
+    kind: sink
+    using: dry
+    contract:
+      - {name: email, type: string, required: true}
