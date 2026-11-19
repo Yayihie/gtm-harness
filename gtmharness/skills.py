@@ -32,12 +32,19 @@ def list_skills(extra_dir: str | Path | None = None) -> dict[str, dict]:
 
 
 def render_skill(skill: dict, params: dict[str, str]) -> str:
-    """Fill {{param}} slots in a skill template. Raises on missing params."""
-    template = yaml.dump(skill, sort_keys=False)
+    """Fill {{param}} slots in a skill's template; returns pipeline YAML.
+
+    Renders only the template (not the whole skill) so the output can be saved
+    directly as a pipeline YAML and round-trip through load_pipeline validation.
+    """
+    template = skill.get("template")
+    if not template:
+        raise ValueError("skill has no template")
     required = set(skill.get("params") or [])
     missing = required - set(params)
     if missing:
         raise ValueError(f"missing required params: {sorted(missing)}")
+    template_str = yaml.dump(template, sort_keys=False)
     for k, v in params.items():
-        template = template.replace("{{" + k + "}}", v)
-    return template
+        template_str = template_str.replace("{{" + k + "}}", v)
+    return template_str

@@ -54,8 +54,6 @@ every item under it is built, tested, and demonstrated on the live repo.
 
 ## Known issues / fixes to make
 
-1. **Sink adapter errors are reported per-row but don't fail the run** — decide
-   policy: fail-fast on first CRM error vs write-what-succeeded + report. (M4)
-2. **Skills render doesn't validate the rendered YAML** — a bad param value
-   produces an invalid pipeline; render should round-trip through load_pipeline.
-   (M4)
+None open — all M4 issues fixed:
+- sink error policy: default writes-what-succeeded + reports + `--fail-fast` flag
+- skills render round-trips through `load_pipeline` validation before printing

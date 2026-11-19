@@ -38,6 +38,12 @@ def _write_to_sink(sink, row):
             return getattr(mod, fn_name)(sink.config, [row])[0]
         except RuntimeError as e:
             return {"key": row.get("email"), "id": None, "status": f"error: {e}"}
+    from . import adapters
+    if sink.using in adapters.REGISTRY:
+        try:
+            return adapters.REGISTRY[sink.using](sink.config, [row])[0]
+        except RuntimeError as e:
+            return {"key": row.get("email"), "id": None, "status": f"error: {e}"}
     return {"key": row.get("email"), "id": None, "status": f"error: unknown sink '{sink.using}'"}
 
 
@@ -137,6 +143,7 @@ def cmd_run(args) -> int:
             print("RUN ABORTED — contract violations. Nothing was written.")
         return 1
     from . import rollback
+    errors = []
     for w in plan_out["writes"]:
         sink = next(s for s in pipeline.sinks() if s.name == w["sink"])
         result = _write_to_sink(sink, w["fields"])
@@ -144,12 +151,20 @@ def cmd_run(args) -> int:
         audit.log_write(args.state_dir, pipeline.name, w["sink"], w["key"], w["fields"])
         if not args.json:
             print(f"  wrote {w['sink']} <- {w['key']} ({result['status']})")
+        if result["status"].startswith("error"):
+            errors.append({"sink": w["sink"], "key": w["key"], "status": result["status"]})
+            if args.fail_fast:
+                break
     rollback.snapshot(args.state_dir, pipeline.name, plan_out["writes"])
     if args.json:
-        print(json.dumps({"command": "run", "ok": True, "writes": len(plan_out["writes"]),
-                          "state_dir": args.state_dir}))
-    else:
-        print(f"RUN OK — {len(plan_out['writes'])} writes audited to {args.state_dir}/audit.jsonl")
+        print(json.dumps({"command": "run", "ok": not errors, "writes": len(plan_out["writes"]),
+                          "errors": errors, "state_dir": args.state_dir}))
+        return 1 if errors else 0
+    if errors:
+        print(f"RUN PARTIAL — {len(plan_out['writes']) - len(errors)} ok, "
+              f"{len(errors)} sink errors; snapshot saved for revert")
+        return 1
+    print(f"RUN OK — {len(plan_out['writes'])} writes audited to {args.state_dir}/audit.jsonl")
     return 0
 
 
@@ -274,6 +289,8 @@ def main(argv=None) -> int:
         sp.set_defaults(fn=fn)
     sub.choices["run"].add_argument("--budget", type=float, default=None,
                                     help="max USD spend on enrichment this run")
+    sub.choices["run"].add_argument("--fail-fast", action="store_true",
+                                    help="stop on first sink error instead of writing what succeeded")
     sub.choices["audit"].add_argument("--verify", action="store_true",
                                       help="verify the audit log hash chain")
     sp = sub.add_parser("diff", help="show what a spec change would alter")
