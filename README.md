@@ -32,6 +32,8 @@ pip install git+https://github.com/Yayihie/gtm-harness.git
 
 Requires Python 3.10+. PyPI release pending — GitHub install is the supported path.
 
+![demo](docs/demo.gif)
+
 ## Quickstart
 
 ```bash
