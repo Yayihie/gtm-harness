@@ -1,0 +1,27 @@
+name: gtmharness
+
+on:
+  pull_request:
+    paths:
+      - "examples/**"
+      - "pipelines/**"
+      - "gtmharness/**"
+
+jobs:
+  check-and-plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install gtmharness
+        run: pip install -e .
+
+      - name: Check spec + schema drift
+        run: gtmharness check examples/pipeline.yaml
+
+      - name: Dry-run plan
+        run: gtmharness plan examples/pipeline.yaml
