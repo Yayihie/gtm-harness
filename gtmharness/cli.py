@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -284,6 +285,11 @@ def cmd_import_clay(args) -> int:
     import yaml
     from .clay import ClayError, import_file
     try:
+        if args.table_id:
+            return _import_clay_mcp(args)
+        if not args.schema:
+            print("CLAY IMPORT ERROR: provide a schema JSON file or --table-id")
+            return 2
         pipeline = import_file(args.schema, name=args.name, source_csv=args.csv)
     except (ClayError, OSError, json.JSONDecodeError) as e:
         print(f"CLAY IMPORT ERROR: {e}")
@@ -301,6 +307,39 @@ def cmd_import_clay(args) -> int:
     else:
         cols = ", ".join(f["name"] for f in pipeline["steps"][-1]["contract"])
         print(f"IMPORTED {pipeline['name']} -> {args.out}")
+        print(f"  columns: {cols}")
+        print("  point the source step at your clay_export_table CSV, then: check / plan / run")
+    return 0
+
+
+def _import_clay_mcp(args) -> int:
+    """Live Clay table -> pipeline YAML via the Clay MCP server."""
+    import yaml
+    from .clay import ClayError
+    from .clay_mcp import ClayMcpError, import_from_mcp
+    argv = args.mcp_path and args.mcp_path.split() or \
+        ["node", os.environ.get("CLAY_MCP_INDEX", "dist/index.js")]
+    try:
+        pipeline = import_from_mcp(
+            args.table_id, argv, session_cookie=os.environ.get("CLAY_SESSION_COOKIE"),
+            name=args.name, view_id=args.view_id, out_csv=args.csv)
+    except (ClayMcpError, ClayError, OSError) as e:
+        print(f"CLAY MCP IMPORT ERROR: {e}")
+        return 2
+    text = yaml.safe_dump(pipeline, sort_keys=False)
+    try:
+        load_pipeline_str(text)
+    except SpecError as e:
+        print(f"CLAY MCP IMPORT ERROR: generated spec is invalid: {e}")
+        return 2
+    Path(args.out).write_text(text)
+    if args.json:
+        print(json.dumps({"command": "import-clay", "mode": "mcp", "out": args.out,
+                          "table_id": args.table_id,
+                          "fields": len(pipeline["steps"][-1]["contract"])}))
+    else:
+        cols = ", ".join(f["name"] for f in pipeline["steps"][-1]["contract"])
+        print(f"IMPORTED {pipeline['name']} (table {args.table_id}) -> {args.out}")
         print(f"  columns: {cols}")
         print("  point the source step at your clay_export_table CSV, then: check / plan / run")
     return 0
@@ -346,10 +385,15 @@ def main(argv=None) -> int:
     sp.set_defaults(fn=cmd_skill_render)
     sp = sub.add_parser("import-clay",
                         help="convert a Clay table schema (clay_get_table JSON) into pipeline YAML")
-    sp.add_argument("schema", help="Clay table schema JSON file")
+    sp.add_argument("schema", nargs="?", default=None,
+                    help="Clay table schema JSON file (omit when --table-id is given)")
     sp.add_argument("-o", "--out", required=True, help="output pipeline YAML path")
     sp.add_argument("--name", default=None, help="pipeline name ([a-z0-9_]; default from table name)")
     sp.add_argument("--csv", default=None, help="path to the clay_export_table CSV (default <name>.csv)")
+    sp.add_argument("--table-id", default=None, help="live fetch: Clay table ID (t_xxx) via the Clay MCP server")
+    sp.add_argument("--view-id", default=None, help="with --table-id: view ID (gv_xxx) to export as CSV")
+    sp.add_argument("--mcp-path", default=None,
+                    help="MCP server command (space-separated); default 'node dist/index.js'")
     sp.set_defaults(fn=cmd_import_clay)
     args = p.parse_args(argv)
     if not hasattr(args, "state_dir"):
