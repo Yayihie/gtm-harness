@@ -1,0 +1,16 @@
+{
+  "name": "AI Startups Pipeline",
+  "tableId": "t_abc123xyz",
+  "fields": [
+    { "id": "f_email", "name": "Email", "type": "email" },
+    { "id": "f_company", "name": "Company Name", "type": "text" },
+    { "id": "f_domain", "name": "Company Domain", "type": "url" },
+    { "id": "f_headcount", "name": "Headcount", "type": "number" },
+    { "id": "f_founded", "name": "Founded", "type": "date" },
+    { "id": "f_is_hiring", "name": "Is Hiring", "type": "checkbox" },
+    { "id": "f_full_name", "name": "Full Name", "type": "text", "formulaText": "{{f_firstName}} + \" \" + {{f_lastName}}" },
+    { "id": "f_summary", "name": "Company Research", "type": "text", "prompt": "Research {Company Domain} and describe what they do.", "outputFields": { "description": { "type": "string" }, "founded": { "type": "number" } } }
+  ],
+  "fieldGroupMap": {},
+  "views": []
+}

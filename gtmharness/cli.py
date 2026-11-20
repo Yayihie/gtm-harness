@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from . import audit, doctor, dryrun, ledger, schema, skills, specdiff
 from .spec import SpecError, load_pipeline
@@ -278,6 +279,33 @@ def load_pipeline_str(yaml_str):
         os.unlink(path)
 
 
+def cmd_import_clay(args) -> int:
+    """Clay table schema -> gtmharness pipeline YAML (round-trip validated)."""
+    import yaml
+    from .clay import ClayError, import_file
+    try:
+        pipeline = import_file(args.schema, name=args.name, source_csv=args.csv)
+    except (ClayError, OSError, json.JSONDecodeError) as e:
+        print(f"CLAY IMPORT ERROR: {e}")
+        return 2
+    text = yaml.safe_dump(pipeline, sort_keys=False)
+    try:
+        load_pipeline_str(text)  # the emitted YAML must pass the spec validator
+    except SpecError as e:
+        print(f"CLAY IMPORT ERROR: generated spec is invalid: {e}")
+        return 2
+    Path(args.out).write_text(text)
+    if args.json:
+        print(json.dumps({"command": "import-clay", "out": args.out,
+                          "fields": len(pipeline["steps"][-1]["contract"])}))
+    else:
+        cols = ", ".join(f["name"] for f in pipeline["steps"][-1]["contract"])
+        print(f"IMPORTED {pipeline['name']} -> {args.out}")
+        print(f"  columns: {cols}")
+        print("  point the source step at your clay_export_table CSV, then: check / plan / run")
+    return 0
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="gtmharness", description="CI/CD discipline for GTM pipelines")
     p.add_argument("--state-dir", default=".gtmharness")
@@ -310,6 +338,13 @@ def main(argv=None) -> int:
     sp.add_argument("--set", nargs="*", default=None, help="param=value pairs")
     sp.add_argument("--dir", default=None, help="extra skills dir")
     sp.set_defaults(fn=cmd_skill_render)
+    sp = sub.add_parser("import-clay",
+                        help="convert a Clay table schema (clay_get_table JSON) into pipeline YAML")
+    sp.add_argument("schema", help="Clay table schema JSON file")
+    sp.add_argument("-o", "--out", required=True, help="output pipeline YAML path")
+    sp.add_argument("--name", default=None, help="pipeline name ([a-z0-9_]; default from table name)")
+    sp.add_argument("--csv", default=None, help="path to the clay_export_table CSV (default <name>.csv)")
+    sp.set_defaults(fn=cmd_import_clay)
     args = p.parse_args(argv)
     return args.fn(args)
 

@@ -104,6 +104,27 @@ gtmharness skill inbound_lead_routing --set source_path=leads.json crm=crm
 Skills are plain YAML with `{{param}}` slots — drop your own into
 `~/.gtmharness/skills/` and share them as files. No marketplace, no lock-in.
 
+## Clay import — no-code table to pipeline in one command
+
+Clay tables export as JSON (via `clay_get_table` / MCP) plus a CSV of rows.
+`import-clay` turns that pair into a validated gtmharness pipeline:
+
+```bash
+gtmharness import-clay clay_table.json -o clay.yaml --csv clay_export.csv
+gtmharness --state-dir .gtmharness check clay.yaml   # establish the schema baseline
+gtmharness --state-dir .gtmharness plan  clay.yaml   # dry-run the write set
+gtmharness --state-dir .gtmharness run   clay.yaml
+```
+
+- Every Clay column becomes a contract field, typed by Clay's own type
+  (text/email/url → string, number → number, date → datetime, checkbox → boolean)
+- Formula, AI/Claygent, HTTP API and waterfall columns are preserved under
+  `computed_columns` in the source config and marked optional in the contract,
+  so the YAML documents what Clay computes upstream
+- Duplicate column names get `_1` suffixes; field ids map to slugs via `field_map`
+- Clay CSVs export every cell as text — the `clay_csv` adapter coerces values
+  to the contract types before the plan gate sees them
+
 ## Real CRM sinks (optional extras)
 
 ```bash
@@ -130,6 +151,8 @@ total transparency about what enrichment actually costs you.
 v0.3.0 — spec validation, schema drift, dry-run plans, audit log, CSV/JSON sources,
 skills registry, HubSpot + Salesforce + webhook sink adapters, enrichment waterfall
 (BYO keys, cost-ordered, cached, budget-capped), provider cost ledger, GitHub Action.
+Clay import (`import-clay`): Clay table schema -> validated pipeline YAML, with
+computed-column preservation and CSV type coercion.
 
 Roadmap: see MILESTONES.md (M4: trust & ops — diff, doctor, rollback, tamper-evident audit log).
 
