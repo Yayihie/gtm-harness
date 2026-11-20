@@ -307,12 +307,18 @@ def cmd_import_clay(args) -> int:
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(prog="gtmharness", description="CI/CD discipline for GTM pipelines")
-    p.add_argument("--state-dir", default=".gtmharness")
-    p.add_argument("--json", action="store_true", help="structured output for CI")
+    # --state-dir/--json accepted both before the subcommand and after it,
+    # so `gtmharness check p.yaml --state-dir X` works like the top-level form.
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("--state-dir", default=argparse.SUPPRESS,
+                        help="state dir (default .gtmharness)")
+    common.add_argument("--json", action="store_true", default=argparse.SUPPRESS,
+                        help="structured output for CI")
+    p = argparse.ArgumentParser(prog="gtmharness", description="CI/CD discipline for GTM pipelines",
+                                parents=[common])
     sub = p.add_subparsers(dest="cmd", required=True)
     for name, fn in [("check", cmd_check), ("plan", cmd_plan), ("run", cmd_run), ("audit", cmd_audit)]:
-        sp = sub.add_parser(name)
+        sp = sub.add_parser(name, parents=[common])
         sp.add_argument("pipeline", help="path to pipeline YAML")
         sp.set_defaults(fn=fn)
     sub.choices["run"].add_argument("--budget", type=float, default=None,
@@ -346,6 +352,10 @@ def main(argv=None) -> int:
     sp.add_argument("--csv", default=None, help="path to the clay_export_table CSV (default <name>.csv)")
     sp.set_defaults(fn=cmd_import_clay)
     args = p.parse_args(argv)
+    if not hasattr(args, "state_dir"):
+        args.state_dir = ".gtmharness"
+    if not hasattr(args, "json"):
+        args.json = False
     return args.fn(args)
 
 

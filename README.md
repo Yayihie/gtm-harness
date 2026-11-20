@@ -148,7 +148,7 @@ total transparency about what enrichment actually costs you.
 
 ## Status
 
-v0.3.0 — spec validation, schema drift, dry-run plans, audit log, CSV/JSON sources,
+v0.5.0 — spec validation, schema drift, dry-run plans, audit log, CSV/JSON sources,
 skills registry, HubSpot + Salesforce + webhook sink adapters, enrichment waterfall
 (BYO keys, cost-ordered, cached, budget-capped), provider cost ledger, GitHub Action.
 Clay import (`import-clay`): Clay table schema -> validated pipeline YAML, with
