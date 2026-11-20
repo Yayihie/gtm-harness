@@ -10,10 +10,18 @@ Following the pattern validated by openenrich (AGPL — no code reused):
 
 Built-in provider registry (BYO keys; each adapter module defines `lookup(lead, config)`):
 
-    name        cost/hit   key config
-    prospeo     $0.01      PROSPEO_API_KEY
-    leadmagic   $0.02      LEADMAGIC_API_KEY
-    null        $0.00      free dry-run provider that always misses
+    name            cost/hit   key config
+    prospeo         $0.01      PROSPEO_API_KEY
+    leadmagic       $0.02      LEADMAGIC_API_KEY
+    findymail       $0.02      FINDYMAIL_API_KEY
+    hunter          $0.02      HUNTER_API_KEY
+    apollo          $0.02      APOLLO_API_KEY
+    peopledatalabs  $0.05      PEOPLE_DATA_LABS_API_KEY
+    null            $0.00      free dry-run provider that always misses
+
+Costs are per-hit estimates — the ledger records what each call actually cost.
+This set mirrors the default Clay email waterfall, so a Clay table's waterfall
+ports provider-for-provider by listing the same names in the transform step.
 
 The registry is a dict of provider name -> {"cost": float, "lookup": fn}.
 Users add providers by registering in PROVIDERS (or a future plugin entry point).
@@ -34,12 +42,14 @@ RETRY_BACKOFF_S = 1.0
 
 
 def _http_json(url: str, api_key: str, payload: dict) -> dict:
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json", "Authorization": api_key},
-        method="POST",
-    )
+    return _http_json_ex(url, {"Content-Type": "application/json", "Authorization": api_key},
+                         payload)
+
+
+def _http_json_ex(url: str, headers: dict, payload: dict, method: str = "POST") -> dict:
+    """POST/GET JSON with arbitrary headers, retried with backoff."""
+    data = json.dumps(payload).encode() if method == "POST" else None
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
     last_err = None
     for attempt in range(RETRY_ATTEMPTS):
         try:
@@ -97,9 +107,66 @@ def _lookup_null(lead: dict, config: dict) -> dict:
     return {"email": None, "cost": 0.0}
 
 
+def _lookup_hunter(lead: dict, config: dict) -> dict:
+    key = config.get("HUNTER_API_KEY")
+    if not key:
+        raise RuntimeError("hunter: set HUNTER_API_KEY in provider config")
+    # Hunter Email Finder: GET with query params, key in query string.
+    data = _http_json_ex(
+        ("https://api.hunter.io/v2/email-finder?domain={d}&first_name={f}&last_name={l}"
+         "&api_key={k}").format(d=lead.get("domain", ""), f=lead.get("first_name", ""),
+                                l=lead.get("last_name", ""), k=key),
+        {}, {}, method="GET")
+    return {"email": (data.get("data") or {}).get("email"), "cost": 0.02}
+
+
+def _lookup_apollo(lead: dict, config: dict) -> dict:
+    key = config.get("APOLLO_API_KEY")
+    if not key:
+        raise RuntimeError("apollo: set APOLLO_API_KEY in provider config")
+    # Apollo People Match: key in the X-Api-Key header, not the body.
+    data = _http_json_ex(
+        "https://api.apollo.io/api/v1/people/match",
+        {"Content-Type": "application/json", "X-Api-Key": key},
+        {"first_name": lead.get("first_name", ""), "last_name": lead.get("last_name", ""),
+         "domain": lead.get("domain", "")})
+    return {"email": (data.get("person") or {}).get("email"), "cost": 0.02}
+
+
+def _lookup_findymail(lead: dict, config: dict) -> dict:
+    key = config.get("FINDYMAIL_API_KEY")
+    if not key:
+        raise RuntimeError("findymail: set FINDYMAIL_API_KEY in provider config")
+    # Findymail: Bearer-token auth, person or company search.
+    data = _http_json_ex(
+        "https://app.findymail.com/api/search/email",
+        {"Content-Type": "application/json", "Authorization": f"Bearer {key}"},
+        {"first_name": lead.get("first_name", ""), "last_name": lead.get("last_name", ""),
+         "domain": lead.get("domain", ""), "company_name": lead.get("company", "")})
+    return {"email": data.get("email"), "cost": 0.02}
+
+
+def _lookup_peopledatalabs(lead: dict, config: dict) -> dict:
+    key = config.get("PEOPLE_DATA_LABS_API_KEY")
+    if not key:
+        raise RuntimeError("peopledatalabs: set PEOPLE_DATA_LABS_API_KEY in provider config")
+    # PDL Person Enrich: X-API-Key header; the email lands in work_email.
+    data = _http_json_ex(
+        "https://api.peopledatalabs.com/v5/person/enrich",
+        {"Content-Type": "application/json", "X-API-Key": key},
+        {"first_name": lead.get("first_name", ""), "last_name": lead.get("last_name", ""),
+         "company": lead.get("company", "")})
+    d = data.get("data") or {}
+    return {"email": d.get("work_email") or d.get("email"), "cost": 0.05}
+
+
 PROVIDERS = {
     "prospeo": {"cost": 0.01, "lookup": _lookup_prospeo},
     "leadmagic": {"cost": 0.02, "lookup": _lookup_leadmagic},
+    "findymail": {"cost": 0.02, "lookup": _lookup_findymail},
+    "hunter": {"cost": 0.02, "lookup": _lookup_hunter},
+    "apollo": {"cost": 0.02, "lookup": _lookup_apollo},
+    "peopledatalabs": {"cost": 0.05, "lookup": _lookup_peopledatalabs},
     "null": {"cost": 0.00, "lookup": _lookup_null},
 }
 

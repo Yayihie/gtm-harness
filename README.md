@@ -75,8 +75,9 @@ PLAN  pipeline=inbound_lead_routing  rows_in=3  writes=3  errors=0
     kind: transform
     using: enrich
     config:
-      providers: [prospeo, leadmagic]   # cheapest first; falls through on miss
-      provider_config: {PROSPEO_API_KEY: "…", LEADMAGIC_API_KEY: "…"}
+      providers: [findymail, hunter, apollo, peopledatalabs]  # cheapest first; falls through on miss
+      provider_config: {FINDYMAIL_API_KEY: "…", HUNTER_API_KEY: "…", APOLLO_API_KEY: "…",
+                        PEOPLE_DATA_LABS_API_KEY: "…"}
 ```
 
 - Cost-ordered: try the cheapest provider first, fall through only on a miss
@@ -84,6 +85,9 @@ PLAN  pipeline=inbound_lead_routing  rows_in=3  writes=3  errors=0
 - Budget cap: `gtmharness run pipe.yaml --budget 5.00` aborts the run the moment
   cumulative spend crosses the cap, with a ledger summary
 - Every provider call is logged to the ledger with its real price
+- Built-ins: prospeo, leadmagic, findymail, hunter, apollo, peopledatalabs, null
+  (dry-run). The Clay-standard set means a Clay table's waterfall ports
+  provider-for-provider.
 
 ## Webhook sinks
 
