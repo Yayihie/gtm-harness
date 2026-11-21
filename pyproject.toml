@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gtmharness"
-version = "0.5.0"
+version = "0.6.0"
 description = "CI/CD discipline for GTM pipelines: declared-as-code workflows with contract tests, dry-run diffs, and audit logs."
 readme = "README.md"
 requires-python = ">=3.10"

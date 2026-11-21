@@ -45,7 +45,7 @@ every item under it is built, tested, and demonstrated on the live repo.
 
 ## M5 — Community & distribution (IN PROGRESS)
 
-- [ ] PyPI publication (`pip install gtmharness`) — BLOCKED: needs user's PyPI
+- [x] PyPI publication — 0.6.0 live (Clay import, MCP wiring, waterfall providers)
       account/token; not published without it
 - [x] 3 reference example pipelines (inbound routing, enrichment, webhook fan-out)
 - [x] Launch post drafted (LAUNCH.md) — framed around the r/nocode quote,
